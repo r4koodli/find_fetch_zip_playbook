@@ -1,0 +1,48 @@
+---
+- name: Zip and Copy the files to local machine
+  hosts: node2
+  become: yes
+  vars:
+    Files: []
+  vars_files:  #Create Varfile and update src and dest in dirpath.yml 
+    - /home/{{ ansible_user_id}}/dirpath.yml
+
+  tasks:
+  - name: Search all the files in the source dir/subdir
+    find:
+      paths: "{{ src_file_loc }}"
+      age: -30d
+      recurse: yes
+      excludes: "*.log,*.out"
+    register: files_to_zip
+
+  - name: Adding Files to the LIST
+    set_fact:
+      Files: "{{ Files + [item.path]}}"
+    with_items: "{{ files_to_zip.files }}"
+
+  - debug:
+      var: Files
+
+  - name: Archive selected files
+    archive:
+      path: "{{ item.path }}"
+      dest: "{{ src_file_loc }}/bkpfiles.zip"
+      format: zip
+    with_items: "{{ files_to_zip.files }}"
+
+  - name: Fetch files from remote host to local host
+    fetch:
+      src: "{{ src_file_loc }}/bkpfiles.zip"
+      dest: "{{ dest_file_loc }}/bkpfiles.zip"
+      flat: yes
+    register: fetch_opt
+
+  - debug:
+      var: fetch_opt
+
+  - name: Delete Zip file in Source
+    file:
+      path: "{{ src_file_loc }}/bkpfiles.zip"
+      state: absent
+    tags: delete_zip

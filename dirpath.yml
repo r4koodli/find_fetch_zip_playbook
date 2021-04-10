@@ -1,0 +1,4 @@
+---
+src_file_loc: "/home/{{ ansible_user_id }}/fetchz"
+dest_file_loc: "/home/{{ ansible_user_id }}/fetchz"
+
